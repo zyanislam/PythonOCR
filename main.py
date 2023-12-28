@@ -34,13 +34,14 @@ for pdf_file in pdf_files:
         text = pytesseract.image_to_string(img_rgb)
         result_dict[f"page_{i+1}"] = text
 
-        # Save the image to the "images" folder
-        img.save(os.path.join(output_folder, f"{pdf_file}_page_{i+1}.png"))
+        # Save the image to the "images" folder with the desired filename format without .pdf extension
+        img_filename = f"{pdf_file.replace('.pdf', '')}_page_{i+1}.png"
+        img.save(os.path.join(output_folder, img_filename))
 
     # Create a list to store the OCR results and images for the current PDF
     ocr_results = []
     for key, value in result_dict.items():
-        img_path = os.path.join(output_folder, f"{pdf_file}_page_{key}.png")
+        img_path = os.path.join(output_folder, f"{pdf_file.replace('.pdf', '')}_page_pg{key}.png")
         ocr_results.append({"page": key, "text": value, "img_path": img_path, "pdf_file": pdf_file})
 
     # Extend the list of OCR results for all PDFs
