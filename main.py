@@ -3,9 +3,14 @@ import os
 import cv2
 import pytesseract
 import numpy as np
+
 from pdf2image import convert_from_path
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.nlp.tokenizers import Tokenizer
+from sumy.summarizers.lsa import LsaSummarizer
+from sumy.summarizers.luhn import LuhnSummarizer
 
 pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 
@@ -85,3 +90,14 @@ sorted_ocr_results_all_pdfs = sorted(pdf_ocr_results.items(), key=lambda x: x[1]
 print("\nSorted PDFs:")
 for pdf_file, result in sorted_ocr_results_all_pdfs:
     print(f"PDF: {pdf_file} | Score: {result['score']} | Image Path: {result['img_path']} | Matched Keywords: {result['matched_keywords']}")
+
+    # Generate a summary for the OCR text
+    parser = PlaintextParser.from_string(result['text'], Tokenizer("english"))
+    summarizer = LuhnSummarizer()
+
+    # Set the desired number of words in the summary (adjust the value as needed)
+    summary_word_count = 300  # For example, 300 words in the summary
+    summary = summarizer(parser.document, sentences_count=summary_word_count)
+
+    print("Summary:", " ".join(str(sentence) for sentence in summary))
+    print("\n" + "=" * 50 + "\n")  # Separator
