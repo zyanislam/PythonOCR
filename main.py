@@ -53,25 +53,33 @@ print(json_data_all_pdfs)
 user_keywords = input("Enter keywords (comma-separated): ")
 user_keywords_list = user_keywords.split(',')
 
-vectorizer_all_pdfs = CountVectorizer().fit_transform([result["text"] for result in pdf_ocr_results.values()] + user_keywords_list)
-cosine_similarities_all_pdfs = cosine_similarity(vectorizer_all_pdfs)
+result_list = []
 
-for i, (pdf_file, result) in enumerate(pdf_ocr_results.items()):
-    similarity_score_all_pdfs = cosine_similarities_all_pdfs[i][-len(user_keywords_list):]
-    result["score"] = round(sum(similarity_score_all_pdfs) * 100, 1)
-    matched_keywords = [user_keywords_list[j] for j, score in enumerate(similarity_score_all_pdfs) if score > 0]
-    result["matched_keywords"] = matched_keywords
-
-sorted_ocr_results_all_pdfs = sorted(pdf_ocr_results.items(), key=lambda x: x[1]["score"], reverse=True)
-
-print("\nSorted PDFs:")
-for pdf_file, result in sorted_ocr_results_all_pdfs:
-    print(f"PDF: {pdf_file} | Score: {result['score']} | Image Path: {result['img_path']} | Matched Keywords: {result['matched_keywords']}")
-
+for pdf_file, result in pdf_ocr_results.items():
     parser = PlaintextParser.from_string(result['text'], Tokenizer("english"))
     summarizer = LuhnSummarizer()
     summary_word_count = 300
     summary = summarizer(parser.document, sentences_count=summary_word_count)
+    generated_summary = " ".join(str(sentence) for sentence in summary)
 
-    print("Summary:", " ".join(str(sentence) for sentence in summary))
+    vectorizer_summary = CountVectorizer().fit_transform([generated_summary] + user_keywords_list)
+    cosine_similarities_summary = cosine_similarity(vectorizer_summary)
+
+    similarity_score_summary = cosine_similarities_summary[0][-len(user_keywords_list):]
+    summary_score = round(sum(similarity_score_summary) * 100, 1)
+
+    matched_keywords = [user_keywords_list[j] for j, score in enumerate(similarity_score_summary) if score > 0]
+
+    result_list.append({
+        "pdf_file": pdf_file,
+        "summary_score": summary_score,
+        "img_path": result['img_path'],
+        "matched_keywords": matched_keywords
+    })
+
+sorted_results = sorted(result_list, key=lambda x: x["summary_score"], reverse=True)
+
+print("\nSorted PDFs with Summary Scores:")
+for result in sorted_results:
+    print(f"PDF: {result['pdf_file']} | Summary Score: {result['summary_score']} | Image Path: {result['img_path']} | Matched Keywords: {result['matched_keywords']}")
     print("\n" + "=" * 50 + "\n")
